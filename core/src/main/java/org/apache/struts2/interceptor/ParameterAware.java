@@ -21,10 +21,7 @@
 
 package org.apache.struts2.interceptor;
 
-import org.apache.struts2.dispatcher.HttpParameters;
-
 import java.util.Map;
-
 
 /**
  * <p>
@@ -41,7 +38,10 @@ import java.util.Map;
  * Note that all parameter values for a given name will be returned, so the type of the objects in
  * the map is <tt>java.lang.String[]</tt>.
  * </p>
+ *
+ * @deprecated please use {@link HttpParametersAware} instead
  */
+@Deprecated
 public interface ParameterAware {
 
     /**
@@ -49,5 +49,5 @@ public interface ParameterAware {
      *
      * @param parameters a Map of parameters (name/value Strings).
      */
-    public void setParameters(HttpParameters parameters);
+    public void setParameters(Map<String, String[]> parameters);
 }

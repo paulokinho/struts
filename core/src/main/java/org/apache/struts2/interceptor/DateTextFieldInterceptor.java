@@ -1,7 +1,7 @@
 package org.apache.struts2.interceptor;
 
 import com.opensymphony.xwork2.ActionInvocation;
-import com.opensymphony.xwork2.interceptor.Interceptor;
+import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.dispatcher.Parameter;
@@ -12,7 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 
-public class DateTextFieldInterceptor implements Interceptor {
+public class DateTextFieldInterceptor extends AbstractInterceptor {
 
     private static final Logger LOG = LogManager.getLogger(DateTextFieldInterceptor.class);
 
@@ -56,12 +56,6 @@ public class DateTextFieldInterceptor implements Interceptor {
             return values();
         }
     }
-    
-    public void destroy() {
-    }
-
-    public void init() {
-    }
 
     public String intercept(ActionInvocation ai) throws Exception {
         HttpParameters parameters = ai.getInvocationContext().getParameters();
@@ -70,7 +64,7 @@ public class DateTextFieldInterceptor implements Interceptor {
         DateWord[] dateWords = DateWord.getAll();
 
         // Get all the values of date type
-        Set<String> names = parameters.getNames();
+        Set<String> names = parameters.keySet();
         for (String name : names) {
 
             for (DateWord dateWord : dateWords) {
@@ -96,7 +90,7 @@ public class DateTextFieldInterceptor implements Interceptor {
         }
 
         // Create all the date objects
-        Map<String, Object> newParams = new HashMap<>();
+        Map<String, Parameter> newParams = new HashMap<>();
         Set<Entry<String, Map<String, String>>> dateEntries = dates.entrySet();
         for (Entry<String, Map<String, String>> dateEntry : dateEntries) {
         	Set<Entry<String, String>> dateFormatEntries = dateEntry.getValue().entrySet();
@@ -110,13 +104,13 @@ public class DateTextFieldInterceptor implements Interceptor {
             	SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
             	formatter.setLenient(false);
                 Date value = formatter.parse(dateValue);
-                newParams.put(dateEntry.getKey(), value);
+                newParams.put(dateEntry.getKey(), new Parameter.Request(dateEntry.getKey(), value));
             } catch (ParseException e) {
                 LOG.warn("Cannot parse the parameter '{}' with format '{}' and with value '{}'", dateEntry.getKey(), dateFormat, dateValue);
             }
         }
 
-        ai.getInvocationContext().setParameters(parameters.clone(newParams));
+        ai.getInvocationContext().getParameters().appendAll(newParams);
 
         return ai.invoke();
     }

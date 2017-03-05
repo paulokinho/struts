@@ -25,6 +25,7 @@ import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.DefaultLocaleProvider;
 import com.opensymphony.xwork2.mock.MockActionInvocation;
+import com.opensymphony.xwork2.mock.MockActionProxy;
 import junit.framework.TestCase;
 import org.apache.struts2.ServletActionContext;
 import org.apache.struts2.StrutsStatics;
@@ -78,7 +79,7 @@ public class I18nInterceptorTest extends TestCase {
     }
 
     public void testDenmarkLocaleRequestOnly() throws Exception {
-        prepare(I18nInterceptor.DEFAULT_REQUESTONLY_PARAMETER, "da_DK");
+        prepare(I18nInterceptor.DEFAULT_REQUEST_ONLY_PARAMETER, "da_DK");
         interceptor.intercept(mai);
 
         assertFalse(mai.getInvocationContext().getParameters().get(I18nInterceptor.DEFAULT_PARAMETER).isDefined()); // should have been removed
@@ -124,7 +125,7 @@ public class I18nInterceptorTest extends TestCase {
     }
 
     public void testWithVariantRequestOnly() throws Exception {
-        prepare(I18nInterceptor.DEFAULT_REQUESTONLY_PARAMETER, "ja_JP_JP");
+        prepare(I18nInterceptor.DEFAULT_REQUEST_ONLY_PARAMETER, "ja_JP_JP");
         interceptor.intercept(mai);
 
         assertFalse(mai.getInvocationContext().getParameters().get(I18nInterceptor.DEFAULT_PARAMETER).isDefined()); // should have been removed
@@ -182,8 +183,29 @@ public class I18nInterceptorTest extends TestCase {
         interceptor.intercept(mai);
 
         Locale locale = (Locale) session.get(I18nInterceptor.DEFAULT_SESSION_ATTRIBUTE);
-        assertNotNull(locale);
+        assertNull(locale); // should not be stored here
+        locale = mai.getInvocationContext().getLocale();
         assertEquals(locale1, locale);
+    }
+
+    public void testCookieCreation() throws Exception {
+
+        prepare(I18nInterceptor.DEFAULT_COOKIE_PARAMETER, "da_DK");
+
+        final Cookie cookie = new Cookie(I18nInterceptor.DEFAULT_COOKIE_ATTRIBUTE, "da_DK");
+
+        HttpServletResponse response = EasyMock.createMock(HttpServletResponse.class);
+        response.addCookie(CookieMatcher.eqCookie(cookie));
+        EasyMock.replay(response);
+
+        ac.put(StrutsStatics.HTTP_RESPONSE, response);
+        interceptor.setLocaleStorage(I18nInterceptor.Storage.COOKIE.name());
+        interceptor.intercept(mai);
+
+        EasyMock.verify(response);
+
+        assertNull(session.get(I18nInterceptor.DEFAULT_SESSION_ATTRIBUTE)); // should not be stored here
+        assertNull(session.get(I18nInterceptor.DEFAULT_SESSION_ATTRIBUTE)); // should not create a locale object
     }
 
     private void prepare(String key, Serializable value) {
@@ -200,7 +222,7 @@ public class I18nInterceptorTest extends TestCase {
         session = new HashMap();
 
         Map<String, Object> ctx = new HashMap<String, Object>();
-        ctx.put(ActionContext.PARAMETERS, HttpParameters.createEmpty().build());
+        ctx.put(ActionContext.PARAMETERS, HttpParameters.create().build());
         ctx.put(ActionContext.SESSION, session);
 
         ac = new ActionContext(ctx);
@@ -213,9 +235,16 @@ public class I18nInterceptorTest extends TestCase {
                 return SUCCESS;
             }
         };
+
+        MockActionProxy proxy = new MockActionProxy();
+        proxy.setAction(action);
+        proxy.setNamespace("i18n");
+        proxy.setActionName("anAction");
+
         mai = new MockActionInvocation();
         ((MockActionInvocation) mai).setAction(action);
         ((MockActionInvocation) mai).setInvocationContext(ac);
+        ((MockActionInvocation) mai).setProxy(proxy);
     }
 
     public void tearDown() throws Exception {
@@ -254,23 +283,4 @@ public class I18nInterceptorTest extends TestCase {
         }
     }
 
-    public void testCookieCreation() throws Exception {
-
-        prepare(I18nInterceptor.DEFAULT_COOKIE_PARAMETER, "da_DK");
-
-        final Cookie cookie = new Cookie(I18nInterceptor.DEFAULT_COOKIE_ATTRIBUTE, "da_DK");
-
-        HttpServletResponse response = EasyMock.createMock(HttpServletResponse.class);
-        response.addCookie(CookieMatcher.eqCookie(cookie));
-        EasyMock.replay(response);
-
-        ac.put(StrutsStatics.HTTP_RESPONSE, response);
-        interceptor.intercept(mai);
-
-        EasyMock.verify(response);
-
-        Locale denmark = new Locale("da", "DK");
-        assertNotNull(session.get(I18nInterceptor.DEFAULT_SESSION_ATTRIBUTE)); // should be stored here
-        assertEquals(denmark, session.get(I18nInterceptor.DEFAULT_SESSION_ATTRIBUTE)); // should create a locale object
-    }
 }

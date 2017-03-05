@@ -60,7 +60,17 @@
     <!-- constant name="struts.excludedPackageNamePatterns" value="^java\.lang\..*,^ognl.*,^(?!javax\.servlet\..+)(javax\..+)" / -->
 
     <!-- this is simpler version of the above used with string comparison -->
-    <constant name="struts.excludedPackageNames" value="java.lang.,ognl,javax" />
+    <constant name="struts.excludedPackageNames"
+              value="
+                java.lang.,
+                ognl.,
+                javax,
+                freemarker.core.,
+                freemarker.template.,
+                freemarker.ext.rhino.,
+                freemarker.ext.beans.,
+                sun.reflect.,
+                javassist." />
 
     <bean class="com.opensymphony.xwork2.ObjectFactory" name="struts"/>
     <bean type="com.opensymphony.xwork2.factory.ResultFactory" name="struts" class="org.apache.struts2.factory.StrutsResultFactory" />
@@ -152,6 +162,8 @@
     <bean type="ognl.PropertyAccessor" name="java.util.Map" class="com.opensymphony.xwork2.ognl.accessor.XWorkMapPropertyAccessor" />
     <bean type="ognl.PropertyAccessor" name="java.util.Collection" class="com.opensymphony.xwork2.ognl.accessor.XWorkCollectionPropertyAccessor" />
     <bean type="ognl.PropertyAccessor" name="com.opensymphony.xwork2.ognl.ObjectProxy" class="com.opensymphony.xwork2.ognl.accessor.ObjectProxyPropertyAccessor" />
+    <bean type="ognl.PropertyAccessor" name="org.apache.struts2.dispatcher.HttpParameters" class="com.opensymphony.xwork2.ognl.accessor.HttpParametersPropertyAccessor" />
+    <bean type="ognl.PropertyAccessor" name="org.apache.struts2.dispatcher.Parameter" class="com.opensymphony.xwork2.ognl.accessor.ParameterPropertyAccessor" />
 
     <bean type="ognl.MethodAccessor" name="java.lang.Object" class="com.opensymphony.xwork2.ognl.accessor.XWorkMethodAccessor" />
     <bean type="ognl.MethodAccessor" name="com.opensymphony.xwork2.util.CompoundRoot" class="com.opensymphony.xwork2.ognl.accessor.CompoundRootAccessor" />
@@ -172,6 +184,8 @@
 
     <bean type="com.opensymphony.xwork2.security.ExcludedPatternsChecker" name="struts" class="com.opensymphony.xwork2.security.DefaultExcludedPatternsChecker" scope="prototype" />
     <bean type="com.opensymphony.xwork2.security.AcceptedPatternsChecker" name="struts" class="com.opensymphony.xwork2.security.DefaultAcceptedPatternsChecker" scope="prototype" />
+
+    <bean type="com.opensymphony.xwork2.config.providers.ValueSubstitutor" class="com.opensymphony.xwork2.config.providers.EnvsValueSubstitutor" scope="singleton"/>
 
     <package name="struts-default" abstract="true" strict-method-invocation="true">
         <result-types>

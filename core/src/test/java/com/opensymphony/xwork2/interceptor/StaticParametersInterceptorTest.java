@@ -126,14 +126,14 @@ public class StaticParametersInterceptorTest extends XWorkTestCase {
 
         User user = new User();
         ActionContext.getContext().getValueStack().push(user);
-        ActionContext.getContext().setParameters(HttpParameters.createEmpty().build());
+        ActionContext.getContext().setParameters(HttpParameters.create().build());
         int before = ActionContext.getContext().getValueStack().size();
         interceptor.setMerge("false");
         interceptor.intercept(mai);
 
         assertEquals(before, ActionContext.getContext().getValueStack().size());
         assertEquals("${top.hero}", user.getName());
-        assertEquals(0, ActionContext.getContext().getParameters().getNames().size());
+        assertEquals(0, ActionContext.getContext().getParameters().keySet().size());
     }
 
     public void testFewParametersParse() throws Exception {

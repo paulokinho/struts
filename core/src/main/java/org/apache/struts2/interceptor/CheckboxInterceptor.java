@@ -61,9 +61,9 @@ public class CheckboxInterceptor extends AbstractInterceptor {
 
     public String intercept(ActionInvocation ai) throws Exception {
         HttpParameters parameters = ai.getInvocationContext().getParameters();
-        Map<String, String[]> extraParams = new HashMap<>();
+        Map<String, Parameter> extraParams = new HashMap<>();
 
-        for (String name : parameters.getNames()) {
+        for (String name : parameters.keySet()) {
             if (name.startsWith("__checkbox_")) {
                 String checkboxName = name.substring("__checkbox_".length());
 
@@ -77,13 +77,13 @@ public class CheckboxInterceptor extends AbstractInterceptor {
                 // is this checkbox checked/submitted?
                 if (!parameters.contains(checkboxName)) {
                     // if not, let's be sure to default the value to false
-                    extraParams.put(checkboxName, new String[]{ uncheckedValue });
+                    extraParams.put(checkboxName, new Parameter.Request(checkboxName, uncheckedValue));
                 }
             }
         }
 
 
-        ai.getInvocationContext().setParameters(parameters.clone(extraParams));
+        ai.getInvocationContext().getParameters().appendAll(extraParams);
 
         return ai.invoke();
     }

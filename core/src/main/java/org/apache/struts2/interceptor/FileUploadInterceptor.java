@@ -26,11 +26,15 @@ import com.opensymphony.xwork2.inject.Container;
 import com.opensymphony.xwork2.inject.Inject;
 import com.opensymphony.xwork2.interceptor.AbstractInterceptor;
 import com.opensymphony.xwork2.interceptor.ValidationAware;
+import com.opensymphony.xwork2.util.LocalizedTextUtil;
 import com.opensymphony.xwork2.util.TextParseUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts2.ServletActionContext;
+import org.apache.struts2.dispatcher.LocalizedMessage;
+import org.apache.struts2.dispatcher.Parameter;
 import org.apache.struts2.dispatcher.multipart.MultiPartRequestWrapper;
+import org.apache.struts2.dispatcher.multipart.UploadedFile;
 import org.apache.struts2.util.ContentTypeMatcher;
 
 import javax.servlet.http.HttpServletRequest;
@@ -255,9 +259,9 @@ public class FileUploadInterceptor extends AbstractInterceptor {
         MultiPartRequestWrapper multiWrapper = (MultiPartRequestWrapper) request;
 
         if (multiWrapper.hasErrors()) {
-            for (String error : multiWrapper.getErrors()) {
+            for (LocalizedMessage error : multiWrapper.getErrors()) {
                 if (validation != null) {
-                    validation.addActionError(error);
+                    validation.addActionError(LocalizedTextUtil.findText(error.getClazz(), error.getTextKey(), ActionContext.getContext().getLocale(), error.getDefaultMessage(), error.getArgs()));
                 }
             }
         }
@@ -277,9 +281,9 @@ public class FileUploadInterceptor extends AbstractInterceptor {
 
                 if (isNonEmpty(fileName)) {
                     // get a File object for the uploaded File
-                    File[] files = multiWrapper.getFiles(inputName);
+                    UploadedFile[] files = multiWrapper.getFiles(inputName);
                     if (files != null && files.length > 0) {
-                        List<File> acceptedFiles = new ArrayList<>(files.length);
+                        List<UploadedFile> acceptedFiles = new ArrayList<>(files.length);
                         List<String> acceptedContentTypes = new ArrayList<>(files.length);
                         List<String> acceptedFileNames = new ArrayList<>(files.length);
                         String contentTypeName = inputName + "ContentType";
@@ -294,11 +298,11 @@ public class FileUploadInterceptor extends AbstractInterceptor {
                         }
 
                         if (!acceptedFiles.isEmpty()) {
-                            Map<String, Object> newParams = new HashMap<>();
-                            newParams.put(inputName, acceptedFiles.toArray(new File[acceptedFiles.size()]));
-                            newParams.put(contentTypeName, acceptedContentTypes.toArray(new String[acceptedContentTypes.size()]));
-                            newParams.put(fileNameName, acceptedFileNames.toArray(new String[acceptedFileNames.size()]));
-                            ac.setParameters(ac.getParameters().clone(newParams));
+                            Map<String, Parameter> newParams = new HashMap<>();
+                            newParams.put(inputName, new Parameter.File(inputName, acceptedFiles.toArray(new UploadedFile[acceptedFiles.size()])));
+                            newParams.put(contentTypeName, new Parameter.File(contentTypeName, acceptedContentTypes.toArray(new String[acceptedContentTypes.size()])));
+                            newParams.put(fileNameName, new Parameter.File(fileNameName, acceptedFileNames.toArray(new String[acceptedFileNames.size()])));
+                            ac.getParameters().appendAll(newParams);
                         }
                     }
                 } else {
@@ -329,7 +333,7 @@ public class FileUploadInterceptor extends AbstractInterceptor {
      *                    logging.
      * @return true if the proposed file is acceptable by contentType and size.
      */
-    protected boolean acceptFile(Object action, File file, String filename, String contentType, String inputName, ValidationAware validation) {
+    protected boolean acceptFile(Object action, UploadedFile file, String filename, String contentType, String inputName, ValidationAware validation) {
         boolean fileIsAcceptable = false;
 
         // If it's null the upload failed

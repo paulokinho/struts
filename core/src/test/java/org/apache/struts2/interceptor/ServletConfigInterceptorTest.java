@@ -84,11 +84,27 @@ public class ServletConfigInterceptorTest extends StrutsInternalTestCase {
     }
 
     public void testParameterAware() throws Exception {
-        ParameterAware mock = (ParameterAware) createMock(ParameterAware.class);
+        ParameterAware mock = createMock(ParameterAware.class);
 
         MockActionInvocation mai = createActionInvocation(mock);
 
-        HttpParameters param = HttpParameters.createEmpty().build();
+        HttpParameters param = HttpParameters.create().build();
+        mai.getInvocationContext().setParameters(param);
+
+        param.applyParameters(mock);
+        expectLastCall().times(1);
+
+        replay(mock);
+        interceptor.intercept(mai);
+        verify(mock);
+    }
+
+    public void testHttpParametersAware() throws Exception {
+        HttpParametersAware mock = createMock(HttpParametersAware.class);
+
+        MockActionInvocation mai = createActionInvocation(mock);
+
+        HttpParameters param = HttpParameters.create().build();
         mai.getInvocationContext().setParameters(param);
 
         mock.setParameters(param);

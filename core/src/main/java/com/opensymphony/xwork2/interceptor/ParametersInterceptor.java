@@ -161,14 +161,14 @@ public class ParametersInterceptor extends MethodFilterInterceptor {
         HttpParameters params;
         Map<String, Parameter> acceptableParameters;
         if (ordered) {
-            params = HttpParameters.createEmpty().withComparator(getOrderedComparator()).withParent(parameters).build();
+            params = HttpParameters.create().withComparator(getOrderedComparator()).withParent(parameters).build();
             acceptableParameters = new TreeMap<>(getOrderedComparator());
         } else {
-            params = HttpParameters.createEmpty().withParent(parameters).build();
+            params = HttpParameters.create().withParent(parameters).build();
             acceptableParameters = new TreeMap<>();
         }
 
-        for (String name : params.getNames()) {
+        for (String name : params.keySet()) {
             Parameter parameter = params.get(name);
             if (isAcceptableParameter(name, action)) {
                 acceptableParameters.put(name, parameter);
@@ -203,11 +203,7 @@ public class ParametersInterceptor extends MethodFilterInterceptor {
             String name = entry.getKey();
             Parameter value = entry.getValue();
             try {
-                if (value.isMultiple()) {
-                    newStack.setParameter(name, value.getMultipleValues());
-                } else {
-                    newStack.setParameter(name, value.getValue());
-                }
+                newStack.setParameter(name, value.getObject());
             } catch (RuntimeException e) {
                 if (devMode) {
                     notifyDeveloperParameterException(action, name, e.getMessage());
@@ -266,7 +262,7 @@ public class ParametersInterceptor extends MethodFilterInterceptor {
         }
 
         StringBuilder logEntry = new StringBuilder();
-        for (String name : parameters.getNames()) {
+        for (String name : parameters.keySet()) {
             logEntry.append(String.valueOf(name));
             logEntry.append(" => ");
             logEntry.append(parameters.get(name).getValue());
@@ -286,7 +282,7 @@ public class ParametersInterceptor extends MethodFilterInterceptor {
 	protected boolean isWithinLengthLimit( String name ) {
         boolean matchLength = name.length() <= paramNameMaxLength;
         if (!matchLength) {
-            notifyDeveloper("Parameter [{}] is too long, allowed length is [{}]", name, String.valueOf(paramNameMaxLength));
+            LOG.debug("Parameter [{}] is too long, allowed length is [{}]", name, String.valueOf(paramNameMaxLength));
         }
         return matchLength;
 	}
@@ -296,25 +292,17 @@ public class ParametersInterceptor extends MethodFilterInterceptor {
         if (result.isAccepted()) {
             return true;
         }
-        notifyDeveloper("Parameter [{}] didn't match accepted pattern [{}]!", paramName, result.getAcceptedPattern());
+        LOG.debug("Parameter [{}] didn't match accepted pattern [{}]!", paramName, result.getAcceptedPattern());
         return false;
     }
 
     protected boolean isExcluded(String paramName) {
         ExcludedPatternsChecker.IsExcluded result = excludedPatterns.isExcluded(paramName);
         if (result.isExcluded()) {
-            notifyDeveloper("Parameter [{}] matches excluded pattern [{}]!", paramName, result.getExcludedPattern());
+            LOG.debug("Parameter [{}] matches excluded pattern [{}]!", paramName, result.getExcludedPattern());
             return true;
         }
         return false;
-    }
-
-    private void notifyDeveloper(String message, String... parameters) {
-        if (devMode) {
-            LOG.warn(message, parameters);
-        } else {
-            LOG.debug(message, parameters);
-        }
     }
 
     /**
